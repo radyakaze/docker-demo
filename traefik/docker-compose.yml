@@ -18,7 +18,7 @@ services:
       - "--entrypoints.web.address=:80"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_DOMAIN:-dashboard.localhost`)"
+      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_DOMAIN:-dashboard.localhost}`)"
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.middlewares=auth"
       - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_USER}:${TRAEFIK_PASSWORD}"
