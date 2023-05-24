@@ -22,6 +22,27 @@ services:
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.middlewares=auth"
       - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_USER}:${TRAEFIK_PASSWORD}"
+  
+  maintenance:
+    image: wickerlabs/maintenance
+    container_name: maintenance
+    networks:
+      - proxy
+    environment:
+      TEAM_NAME: "Radya"
+      TITLE: "Oops!"
+      MAIL_ADDRESS: "email@radya.dev"
+      LINK_COLOR: "#dc8100"
+      THEME: "Light"
+      PORT: 80
+      RESPONSE_CODE: "503 Service Unavailable"
+      MESSAGE: "This is my custom message. {{contact}} now"
+      CONTACT_LINK: "contact us"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.maintenance.rule=HostRegexp:{catchall:.*}"
+      - "traefik.http.routers.maintenance.entrypoints=web"
+      - "traefik.http.routers.maintenance.priority=1"
 
 # NETWORKS
 networks:
