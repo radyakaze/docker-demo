@@ -5,6 +5,7 @@ services:
   vaulwarden:
     image: vaultwarden/server:alpine
     container_name: vaultwarden
+    restart: on-failure
     env_file:
       - .env
     volumes:
@@ -25,6 +26,7 @@ services:
 
   postgres:
     image: postgres:15-alpine
+    restart: on-failure
     volumes:
       - pgsql:/var/lib/postgresql/data
     networks:
