@@ -5,6 +5,8 @@ services:
   vaulwarden:
     image: vaultwarden/server:alpine
     container_name: vaultwarden
+    env_file:
+      - .env
     volumes:
       - vaultwarden:/data
     depends_on:
