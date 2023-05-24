@@ -22,27 +22,29 @@ services:
       - "traefik.http.routers.dashboard.service=api@internal"
       - "traefik.http.routers.dashboard.middlewares=auth"
       - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_USER}:${TRAEFIK_PASSWORD}"
-  
-  maintenance:
-    image: wickerlabs/maintenance
-    container_name: maintenance
+
+  error-pages:
+    image: tarampampam/error-pages:2.24
     networks:
       - proxy
     environment:
-      TEAM_NAME: "Radya"
-      TITLE: "Oops!"
-      MAIL_ADDRESS: "email@radya.dev"
-      LINK_COLOR: "#dc8100"
-      THEME: "Light"
-      PORT: 80
-      RESPONSE_CODE: "503 Service Unavailable"
-      MESSAGE: "This is my custom message. {{contact}} now"
-      CONTACT_LINK: "contact us"
+      TEMPLATE_NAME: ghost
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.maintenance.rule=HostRegexp:{catchall:.*}"
-      - "traefik.http.routers.maintenance.entrypoints=web"
-      - "traefik.http.routers.maintenance.priority=1"
+      traefik.enable: true
+      # use as "fallback" for any NON-registered services (with priority below normal)
+      traefik.http.routers.error-pages-router.rule: HostRegexp(`{host:.+}`)
+      traefik.http.routers.error-pages-router.priority: 10
+      # should say that all of your services work on https
+      traefik.http.routers.error-pages-router.entrypoints: web
+      traefik.http.routers.error-pages-router.middlewares: error-pages-middleware
+      # "errors" middleware settings
+      traefik.http.middlewares.error-pages-middleware.errors.status: 400-599
+      traefik.http.middlewares.error-pages-middleware.errors.service: error-pages-service
+      traefik.http.middlewares.error-pages-middleware.errors.query: /{status}.html
+      # define service properties
+      traefik.http.services.error-pages-service.loadbalancer.server.port: 8080
+    depends_on:
+      - traefik
 
 # NETWORKS
 networks:
