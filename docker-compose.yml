@@ -1,0 +1,89 @@
+version: "3.8"
+services:
+  traefik:
+    container_name: traefik
+    image: traefik:latest
+    restart: on-failure
+    ports:
+      - 80:80
+      - 443:443 # only if you want https
+    networks:
+      - radya
+    volumes:
+      - letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    command:
+      - "--api=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.websecure.address=:443" # only if you want https
+      - "--certificatesresolvers.myresolver.acme.tlschallenge=true" # only if you want https
+      - "--certificatesresolvers.myresolver.acme.email=email@radya.dev" # only if you want https
+      - "--certificatesresolvers.myresolver.acme.storage=/letsencrypt/acme.json" # only if you want https
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.dashboard.rule=Host(`traefik.radya.dev`)"
+      - "traefik.http.routers.dashboard.service=api@internal"
+      - "traefik.http.routers.dashboard.middlewares=auth"
+      # to generate password echo $(htpasswd -nB radya) | sed -e s/\\$/\\$\\$/g
+      - "traefik.http.middlewares.auth.basicauth.users=radya:$$2y$$05$$hrhuDpk8dnu5EF0tsjf9Z.o4mTp0uUzsWsMnnzJdX9W3dvAn/9rLa" # password is radyademo
+  
+  vaulwarden:
+    image: vaultwarden/server:alpine
+    volumes:
+      - vaultwarden:/data
+    networks:
+      - radya
+    environment:
+      DATABASE_URL: 'postgresql://${DB_USERNAME}:${DB_PASSWORD:-secret}@postgres/${DB_DATABASE}'
+    labels:
+      - "com.centurylinklabs.watchtower.enable=true"
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy-network"
+      - "traefik.http.routers.backend.rule=Host(`password.radya.dev`)"
+      - "traefik.http.routers.backend.entrypoints=web"
+      - "traefik.http.services.backend.loadbalancer.server.port=80"
+      - "traefik.http.routers.whoami.entrypoints=websecure" # only if you want https
+      - "traefik.http.routers.whoami.tls.certresolver=myresolver" # only if you want https
+      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https" # only if you want https, redirect http to https
+
+
+  postgres:
+    image: postgres:15-alpine
+    volumes:
+      - pgsql:/var/lib/postgresql/data
+    ports:
+      - 5432:5432
+    environment:
+      PGPASSWORD: '${DB_PASSWORD:-secret}'
+      POSTGRES_DB: '${DB_DATABASE}'
+      POSTGRES_USER: '${DB_USERNAME}'
+      POSTGRES_PASSWORD: '${DB_PASSWORD:-secret}'
+    networks:
+      - radya
+    labels:
+      - "traefik.enable=false"
+
+  watchtower:
+    image: containrrr/watchtower
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /root/.docker/config.json:/config.json:ro
+    command: --interval 60
+    environment:
+      WATCHTOWER_LABEL_ENABLE: "true"
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_ROLLING_RESTART: "true"
+
+networks:
+  radya:
+    driver: bridge
+
+volumes:
+  pgsql:
+    driver: local
+  vaultwarden:
+    driver: local
+  letsencrypt:
+    driver: local
