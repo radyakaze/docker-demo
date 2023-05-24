@@ -41,7 +41,7 @@ services:
       - "com.centurylinklabs.watchtower.enable=true"
       - "traefik.enable=true"
       - "traefik.docker.network=proxy-network"
-      - "traefik.http.routers.backend.rule=Host(`password.radya.dev`)"
+      - "traefik.http.routers.backend.rule=Host(`bitwarden.radya.dev`)"
       - "traefik.http.routers.backend.entrypoints=web"
       - "traefik.http.services.backend.loadbalancer.server.port=80"
       - "traefik.http.routers.whoami.entrypoints=websecure" # only if you want https
