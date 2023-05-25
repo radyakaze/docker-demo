@@ -11,17 +11,44 @@ services:
       - proxy
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./logs/:/logs/
     command:
       - "--api=true"
       - "--providers.docker=true"
       - "--providers.docker.exposedbydefault=false"
       - "--entrypoints.web.address=:80"
+      - "--log.level=DEBUG"
+      - "--log.filePath=/logs/traefik.log" 
+      - "--accesslog=true"
+      - "--accesslog.filePath=/logs/access.log"
+    environment:
+      TZ: Asia/Jakarta
     labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.dashboard.rule=Host(`${TRAEFIK_DOMAIN:-dashboard.localhost}`)"
-      - "traefik.http.routers.dashboard.service=api@internal"
-      - "traefik.http.routers.dashboard.middlewares=auth"
-      - "traefik.http.middlewares.auth.basicauth.users=${TRAEFIK_USER}:${TRAEFIK_PASSWORD}"
+      traefik.enable: true
+      traefik.http.routers.dashboard.rule: Host(`${TRAEFIK_DOMAIN:-dashboard.localhost}`)
+      traefik.http.routers.dashboard.service: api@internal
+      traefik.http.routers.dashboard.middlewares: auth
+      traefik.http.middlewares.auth.basicauth.users: ${TRAEFIK_USER}:${TRAEFIK_PASSWORD}
+
+  error-pages:
+    image: wickerlabs/maintenance
+    container_name: maintenance-page
+    networks:
+      - proxy
+    environment:
+      TEAM_NAME: "Radya"
+      TITLE: "Oops!"
+      THEME: "Dark"
+      PORT: 8080
+      RESPONSE_CODE: "503 Service Unavailable"
+      MESSAGE: "The server is temporary busy, please try again later."
+    labels:
+      traefik.enable: true
+      traefik.http.routers.error-pages-router.rule: HostRegexp(`{host:.+}`)
+      traefik.http.routers.error-pages-router.priority: 10
+      traefik.http.services.error-pages-service.loadbalancer.server.port: 8080
+    depends_on:
+      - traefik
 
 # NETWORKS
 networks:

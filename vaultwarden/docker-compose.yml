@@ -18,10 +18,9 @@ services:
     environment:
       DATABASE_URL: 'postgresql://${DB_USERNAME}:${DB_PASSWORD:-secret}@postgres/${DB_DATABASE}'
     labels:
-      - "traefik.enable=true"
-      - "com.centurylinklabs.watchtower.enable=true"
-      - "traefik.http.routers.vaultwarden.rule=Host(`${APP_DOMAIN:-vaultwarden.localhost}`)"
-      - "traefik.http.routers.vaultwarden.entrypoints=web"
+      traefik.enable: true
+      traefik.http.routers.vaultwarden.rule: Host(`${APP_DOMAIN:-vaultwarden.localhost}`)
+      traefik.http.routers.vaultwarden.entrypoints: web
 
 
   postgres:
